@@ -16,7 +16,6 @@ namespace MassTransit.Pipeline.Filters
     using System.Threading.Tasks;
     using Events;
     using GreenPipes;
-    using GreenPipes.Internals.Extensions;
     using Transports;
     using Util;
 
@@ -36,8 +35,7 @@ namespace MassTransit.Pipeline.Filters
         async Task IFilter<ExceptionReceiveContext>.Send(ExceptionReceiveContext context, IPipe<ExceptionReceiveContext> next)
         {
             if (!context.TryGetPayload(out IErrorTransport transport))
-                throw new TransportException(context.InputAddress, $"The {nameof(IDeadLetterTransport)} was not available on the {nameof(ReceiveContext)}.");
-                sendContext.Headers.Set(MessageHeaders.FaultExceptionType, TypeCache.GetShortName(exception.GetType()));
+                throw new TransportException(context.InputAddress, $"The {nameof(IErrorTransport)} was not available on the {nameof(ReceiveContext)}.");
 
             if (!context.IsFaulted)
                 GenerateFault(context);
@@ -45,8 +43,6 @@ namespace MassTransit.Pipeline.Filters
             await transport.Send(context).ConfigureAwait(false);
 
             await next.Send(context).ConfigureAwait(false);
-
-            //            context.LogMoved(_destinationAddress, $"Fault: {exceptionMessage}");
 
             await next.Send(context).ConfigureAwait(false);
         }
